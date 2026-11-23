@@ -40,3 +40,10 @@ tradeexample:
     read-timeout-ms: 5000
     batch-wait-timeout-ms: 30000
     task-timeout-ms: 180000
+
+  redis:
+    address: "${TRADEEXAMPLE_REDIS_ADDRESS:redis://127.0.0.1:6379}"
+    password: "${TRADEEXAMPLE_REDIS_PASSWORD:}"
+
+  exchange-rate:
+    snapshot-key: "${TRADEEXAMPLE_EXCHANGE_RATE_SNAPSHOT_KEY:demo:currency:snapshot}"

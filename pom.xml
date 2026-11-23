@@ -22,6 +22,7 @@
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mybatis-plus.version>3.5.14</mybatis-plus.version>
+        <redisson.version>3.51.0</redisson.version>
     </properties>
 
     <dependencies>
@@ -56,6 +57,13 @@
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-mysql</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- 使用 Redisson 连接 Redis，整体读写汇率快照。 -->
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson</artifactId>
+            <version>${redisson.version}</version>
         </dependency>
 
         <!-- Jakarta Bean Validation参数校验 -->

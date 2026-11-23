@@ -35,7 +35,6 @@ public class ImageSyncService {
     private final ExternalImageClient externalClient;
     private final TransactionTemplate transactions;
 
-    /** 准备取得执行权、发布映射和写回结果所需的短事务。 */
     public ImageSyncService(
             ImageSyncMapper mapper,
             ExternalImageClient externalClient,
