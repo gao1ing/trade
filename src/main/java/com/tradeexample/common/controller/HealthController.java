@@ -8,12 +8,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
 
+/** 供探针读取应用名称和进程存活状态。 */
 @RestController
 @RequestMapping("/api/v1")
 public class HealthController {
 
     private final String applicationName;
 
+    /** 从 Spring 配置读取探针响应中使用的应用名称。 */
     public HealthController(
             @Value("${spring.application.name}") String applicationName) {
         this.applicationName = applicationName;

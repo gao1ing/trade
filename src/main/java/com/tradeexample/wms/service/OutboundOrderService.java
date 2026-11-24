@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-/** 生成和查询出库草稿。 */
+/** 管理出库单从草稿分配、提交扣减到作废恢复及重新生成的事务。 */
 @Service
 @RequiredArgsConstructor
 public class OutboundOrderService {
@@ -98,6 +98,7 @@ public class OutboundOrderService {
 
         OutboundOrder order = lockCurrentRevision(id, request.revision());
 
+        // 修订号已在加锁时核对。同一修订的重发请求可携带提交前的版本号。
         if ("SUBMITTED".equals(order.getStatus())) {
             return loadDetail(id);
         }
@@ -116,6 +117,7 @@ public class OutboundOrderService {
             );
         }
 
+        // 主表先取得本次提交资格；后续扣减或流水失败会连同状态变更一起回滚。
         int updatedRows = outboundOrderMapper.markSubmitted(
                 id, request.revision(), request.version()
         );
@@ -152,6 +154,7 @@ public class OutboundOrderService {
         OutboundOrder order = lockCurrentRevision(id, request.revision());
         String originalStatus = order.getStatus();
 
+        // 同一修订已作废时直接返回，避免重发请求再次恢复库存。
         if ("CANCELED".equals(originalStatus)) {
             return loadDetail(id);
         }
@@ -524,6 +527,7 @@ public class OutboundOrderService {
         }
     }
 
+    /** 以 long 汇总各分配行的箱数，作为当前修订的单据总箱数。 */
     private long sumBoxCounts(List<OutboundOrderItem> items) {
         long total = 0L;
         for (OutboundOrderItem item : items) {
@@ -576,6 +580,7 @@ public class OutboundOrderService {
         return new OutboundOrderDetailVO(order, List.copyOf(items));
     }
 
+    /** 以采购单号和产品编号共同识别同一仓库请求中的重复需求。 */
     private record DemandKey(
             String purchaseOrderNo,
             String productNo

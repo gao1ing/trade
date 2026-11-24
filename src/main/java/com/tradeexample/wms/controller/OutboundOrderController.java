@@ -25,6 +25,7 @@ public class OutboundOrderController {
 
     private final OutboundOrderService outboundOrderService;
 
+    /** 按请求分配库存并创建一张新草稿；重复创建会生成新单据。 */
     @PostMapping
     public ApiResponse<OutboundOrderDetailVO> createDraft(
             @Valid @RequestBody CreateOutboundOrderRequest request) {
@@ -34,6 +35,7 @@ public class OutboundOrderController {
         );
     }
 
+    /** 提交指定修订的出库单；同一修订已提交时返回当前明细。 */
     @PostMapping("/{id}/submit")
     public ApiResponse<OutboundOrderDetailVO> submit(
             @PathVariable("id")
@@ -44,6 +46,7 @@ public class OutboundOrderController {
         return ApiResponse.success(outboundOrderService.submit(id, request));
     }
 
+    /** 作废指定修订；已提交的单据在本次事务中恢复原批次库存。 */
     @PostMapping("/{id}/cancel")
     public ApiResponse<OutboundOrderDetailVO> cancel(
             @PathVariable("id")
@@ -54,6 +57,7 @@ public class OutboundOrderController {
         return ApiResponse.success(outboundOrderService.cancel(id, request));
     }
 
+    /** 使用新需求重新分配库存并生成下一修订，旧明细保留供追溯。 */
     @PostMapping("/{id}/regenerate")
     public ApiResponse<OutboundOrderDetailVO> regenerate(
             @PathVariable("id")
@@ -64,6 +68,7 @@ public class OutboundOrderController {
         return ApiResponse.success(outboundOrderService.regenerate(id, request));
     }
 
+    /** 查询主表及其当前修订的分配明细。 */
     @GetMapping("/{id}")
     public ApiResponse<OutboundOrderDetailVO> getDetail(
             @PathVariable("id")

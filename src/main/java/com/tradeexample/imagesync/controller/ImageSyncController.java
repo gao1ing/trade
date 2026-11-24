@@ -18,6 +18,7 @@ public class ImageSyncController {
 
     private final ImageSyncService imageSyncService;
 
+    /** 同步指定产品当前版本的图片，并返回本次明细的上传和清理结果。 */
     @PostMapping("/{productId}/sync")
     public ApiResponse<ImageSyncResultVO> sync(
             @PathVariable("productId")

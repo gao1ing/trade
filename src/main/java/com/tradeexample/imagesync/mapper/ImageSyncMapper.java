@@ -183,7 +183,7 @@ public interface ImageSyncMapper {
             """)
     int failOpenTask(@Param("taskId") long taskId, @Param("message") String message);
 
-    /** 关闭尚未完成的明细，已经写回的结果继续有效。 */
+    /** 关闭任务时，未开始的明细记为失败；执行中的上传可能已到达外部图库，记为结果未知。 */
     @Update("""
             UPDATE image_sync_task_item
             SET result_message = CASE WHEN status = 'RUNNING'

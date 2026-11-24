@@ -19,12 +19,14 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/** 将业务异常及 Spring MVC 请求错误转换为统一响应。 */
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log =
             LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    /** 按业务错误码选择 HTTP 状态，并返回触发异常时记录的原因。 */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiResponse<Void>> handleBusinessException(
             BusinessException exception) {

@@ -1,6 +1,7 @@
 package com.tradeexample.exchange.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tradeexample.exchange.model.ExchangeRateSnapshot;
 import org.redisson.api.RBucket;
@@ -9,17 +10,17 @@ import org.redisson.client.codec.StringCodec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.Objects;
-import java.util.Optional;
 
-/** 将整份汇率快照保存在一个 Redis 字符串键中，每次查询都从 Redis 读取。 */
+/** 整体读写汇率刷新状态，写回时检查 Redis 中的原值是否已经变化。 */
 @Component
 public class ExchangeRateSnapshotStore {
 
     private final RBucket<String> bucket;
     private final ObjectMapper objectMapper;
 
-    /** 固定快照的 Redis 键和字符串编码，读写共用同一个配置。 */
+    /** 复用原有快照键 */
     public ExchangeRateSnapshotStore(
             RedissonClient redissonClient,
             ObjectMapper objectMapper,
@@ -29,38 +30,57 @@ public class ExchangeRateSnapshotStore {
         this.objectMapper = objectMapper;
     }
 
-    /** 读取最近保存的完整快照。Redis 中还没有这个键时返回空。 */
-    public Optional<ExchangeRateSnapshot> read() {
-        String json = bucket.get();
-        if (json == null) {
-            return Optional.empty();
+    /** 保存最近成功报价和最近尝试时间；首次抓取失败时，成功报价可以为空。 */
+    public record RefreshState(
+            ExchangeRateSnapshot snapshot,
+            Instant lastAttemptAt
+    ) {
+        /** 每一条已保存的刷新状态都必须能说清何时尝试过。 */
+        public RefreshState {
+            Objects.requireNonNull(lastAttemptAt, "刷新尝试时间不能为空");
+        }
+    }
+
+    /** 保存一次 Redis 读取的原始文本和解析结果，原始文本用于后续条件写入。 */
+    public record StoredValue(String rawJson, RefreshState state) {
+    }
+
+    /** 读取整份刷新状态；旧格式以快照中的尝试时间初始化，键缺失时返回空状态。 */
+    public StoredValue read() {
+        String rawJson = bucket.get();
+        if (rawJson == null) {
+            return new StoredValue(null, null);
         }
 
         try {
-            // 已有键却读不出快照，说明存储内容有问题，调用方需要看到这个错误。
-            ExchangeRateSnapshot snapshot =
-                    objectMapper.readValue(json, ExchangeRateSnapshot.class);
-            if (snapshot == null) {
-                throw new IllegalStateException("Redis 中的汇率快照内容为 JSON null");
+            JsonNode root = objectMapper.readTree(rawJson);
+            if (root == null || !root.isObject()) {
+                throw new IllegalStateException("Redis 中的汇率快照必须是 JSON 对象");
             }
-            return Optional.of(snapshot);
+
+            // 旧格式的 rates 在顶层。直接从原始文本读取，保留 BigDecimal 精度。
+            if (root.has("rates")) {
+                ExchangeRateSnapshot snapshot =
+                        objectMapper.readValue(rawJson, ExchangeRateSnapshot.class);
+                return new StoredValue(
+                        rawJson, new RefreshState(snapshot, snapshot.lastAttemptAt())
+                );
+            }
+
+            RefreshState state = objectMapper.readValue(rawJson, RefreshState.class);
+            return new StoredValue(rawJson, state);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Redis 中的汇率快照格式错误", e);
         }
     }
 
-    /** 先生成完整 JSON，再用一次 Redis 写入替换整份快照。 */
-    public void save(ExchangeRateSnapshot snapshot) {
-        Objects.requireNonNull(snapshot, "待保存的汇率快照不能为空");
-
-        String json;
+    /** 只有 Redis 仍是读取时的原值才整体替换；返回 false 表示其他刷新已先写入。 */
+    public boolean replaceIfUnchanged(StoredValue expected, RefreshState next) {
         try {
-            // 转换失败时尚未写 Redis，之前保存的报价仍可读取。
-            json = objectMapper.writeValueAsString(snapshot);
+            String nextJson = objectMapper.writeValueAsString(next);
+            return bucket.compareAndSet(expected.rawJson(), nextJson);
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("汇率快照无法转换为 JSON", e);
+            throw new IllegalStateException("汇率刷新状态无法转换为 JSON", e);
         }
-
-        bucket.set(json);
     }
 }

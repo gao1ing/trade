@@ -1,6 +1,6 @@
 package com.tradeexample.imagesync.vo;
 
-/** 一类产品的同步任务，以及各状态的明细数量。 */
+/** 一类产品的任务进度。成功与跳过均计入已完成；结果未知的明细需要查询外部回执。 */
 public record ImageSyncTaskVO(
         long taskId,
         String productType,

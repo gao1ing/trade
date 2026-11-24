@@ -47,3 +47,8 @@ tradeexample:
 
   exchange-rate:
     snapshot-key: "${TRADEEXAMPLE_EXCHANGE_RATE_SNAPSHOT_KEY:demo:currency:snapshot}"
+    source-url: "http://127.0.0.1:${server.port}/api/v1/mock/exchange-rates"
+    connect-timeout-ms: 5000
+    read-timeout-ms: 10000
+    max-source-age: 72h
+    refresh-interval: 30m

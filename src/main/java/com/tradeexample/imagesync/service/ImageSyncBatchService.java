@@ -86,6 +86,7 @@ public class ImageSyncBatchService {
             return created;
         });
 
+        // 创建事务已提交，工作线程此时才能读到完整的任务清单。
         for (CreatedTask task : tasks) {
             try {
                 executor.execute(() -> runTask(task.taskId()));

@@ -19,6 +19,8 @@ public class RedissonConfig {
             @Value("${tradeexample.redis.password}") String password) {
 
         Config config = new Config();
+        // 首次操作 Redis 时再连接，让 Redis 暂时不可用时应用仍能启动并返回明确错误。
+        config.setLazyInitialization(true);
         SingleServerConfig server = config.useSingleServer().setAddress(address);
 
         // 只有配置了密码，才向 Redis 发送认证信息。

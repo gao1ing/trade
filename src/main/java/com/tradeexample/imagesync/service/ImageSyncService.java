@@ -35,6 +35,7 @@ public class ImageSyncService {
     private final ExternalImageClient externalClient;
     private final TransactionTemplate transactions;
 
+    /** 使用短事务保存图片映射和执行结果，外部图库请求在事务外发起。 */
     public ImageSyncService(
             ImageSyncMapper mapper,
             ExternalImageClient externalClient,
@@ -157,6 +158,7 @@ public class ImageSyncService {
                 }
             }
 
+            // HTTP 已经结束；进入短事务后仍要复核源图版本和本次明细的执行序号。
             if (externalId != null) {
                 String uploadedId = externalId;
                 cleanupId = transactions.execute(tx -> publish(attempt, uploadedId));
