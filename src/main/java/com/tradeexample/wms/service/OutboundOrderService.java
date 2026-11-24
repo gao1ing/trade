@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.tradeexample.common.exception.BusinessException;
 import com.tradeexample.common.exception.ErrorCode;
 import com.tradeexample.wms.dto.CreateOutboundOrderRequest;
+import com.tradeexample.wms.dto.OutboundDemandItem;
 import com.tradeexample.wms.entity.InventoryDetail;
 import com.tradeexample.wms.entity.OutboundOrder;
 import com.tradeexample.wms.entity.OutboundOrderItem;
@@ -262,11 +263,11 @@ public class OutboundOrderService {
 
     /** 去掉首尾空白后检查重复项 */
     private void checkDuplicateDemands(
-            List<CreateOutboundOrderRequest.Demand> demands) {
+            List<OutboundDemandItem> demands) {
 
         Set<DemandKey> keys = new HashSet<>();
 
-        for (CreateOutboundOrderRequest.Demand demand : demands) {
+        for (OutboundDemandItem demand : demands) {
             DemandKey key = new DemandKey(
                     demand.purchaseOrderNo().strip(),
                     demand.productNo().strip()
@@ -286,12 +287,12 @@ public class OutboundOrderService {
      * 每项先取最早入库的批次，不够再取下一批。
      * 仅构造明细，库存不足时抛出异常。
      */
-    private List<OutboundOrderItem> allocate(String warehouseCode, List<CreateOutboundOrderRequest.Demand> demands) {
+    private List<OutboundOrderItem> allocate(String warehouseCode, List<OutboundDemandItem> demands) {
 
         List<OutboundOrderItem> items = new ArrayList<>();
         Set<Long> matchedInventoryIds = new HashSet<>();
 
-        for (CreateOutboundOrderRequest.Demand demand : demands) {
+        for (OutboundDemandItem demand : demands) {
             String purchaseOrderNo = demand.purchaseOrderNo().strip();
             String productNo = demand.productNo().strip();
 

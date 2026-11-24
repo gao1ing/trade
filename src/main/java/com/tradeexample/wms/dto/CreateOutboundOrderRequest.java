@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
@@ -21,23 +20,6 @@ public record CreateOutboundOrderRequest(
         LocalDate outboundDate,
 
         @NotEmpty(message = "出库需求不能为空")
-        List<@NotNull(message = "需求项不能为空") @Valid Demand> demands
+        List<@NotNull(message = "需求项不能为空") @Valid OutboundDemandItem> demands
 ) {
-
-    /** 同一请求内，采购单号和产品编号相同的需求只能出现一次。 */
-    public record Demand(
-
-            @NotBlank(message = "采购单号不能为空")
-            @Size(max = 64, message = "采购单号不能超过64个字符")
-            String purchaseOrderNo,
-
-            @NotBlank(message = "产品编号不能为空")
-            @Size(max = 64, message = "产品编号不能超过64个字符")
-            String productNo,
-
-            @NotNull(message = "需求箱数不能为空")
-            @Positive(message = "需求箱数必须大于0")
-            Integer boxCount
-    ) {
-    }
 }

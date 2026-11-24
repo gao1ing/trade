@@ -5,6 +5,7 @@ import com.tradeexample.common.exception.ErrorCode;
 import com.tradeexample.imagesync.mapper.ImageSyncMapper;
 import com.tradeexample.imagesync.mapper.ImageSyncMapper.TaskInsert;
 import com.tradeexample.imagesync.vo.ImageSyncResultVO;
+import com.tradeexample.imagesync.vo.ImageSyncTaskCreatedVO;
 import com.tradeexample.imagesync.vo.ImageSyncTaskVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -64,22 +65,22 @@ public class ImageSyncBatchService {
     }
 
     /** 先把任务和明细存好，再交给线程池。 */
-    public List<CreatedTask> create() {
+    public List<ImageSyncTaskCreatedVO> create() {
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             throw new IllegalStateException("请在事务外创建图片同步任务");
         }
 
-        List<CreatedTask> tasks = transactions.execute(tx -> {
+        List<ImageSyncTaskCreatedVO> tasks = transactions.execute(tx -> {
             TaskInsert own = new TaskInsert("OWN", "PENDING");
             TaskInsert customer = new TaskInsert("CUSTOMER", "PENDING");
             TaskInsert accessory = new TaskInsert("ACCESSORY", "PENDING");
 
-            List<CreatedTask> created = new ArrayList<>(3);
+            List<ImageSyncTaskCreatedVO> created = new ArrayList<>(3);
             for (TaskInsert task : List.of(own, customer, accessory)) {
                 if (mapper.insertTask(task) != 1) {
                     throw new IllegalStateException("图片同步任务写入失败");
                 }
-                created.add(new CreatedTask(task.getId(), task.getProductType()));
+                created.add(new ImageSyncTaskCreatedVO(task.getId(), task.getProductType()));
             }
 
             mapper.insertBatchItems(own.getId(), customer.getId(), accessory.getId());
@@ -87,7 +88,7 @@ public class ImageSyncBatchService {
         });
 
         // 创建事务已提交，工作线程此时才能读到完整的任务清单。
-        for (CreatedTask task : tasks) {
+        for (ImageSyncTaskCreatedVO task : tasks) {
             try {
                 executor.execute(() -> runTask(task.taskId()));
             } catch (TaskRejectedException exception) {
@@ -205,9 +206,5 @@ public class ImageSyncBatchService {
                 Thread.currentThread().interrupt();
             }
         }
-    }
-
-    /** 返回新建任务的 ID 和所属产品类型。 */
-    public record CreatedTask(long taskId, String productType) {
     }
 }

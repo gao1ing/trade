@@ -2,9 +2,9 @@ package com.tradeexample.imagesync.controller;
 
 import com.tradeexample.common.api.ApiResponse;
 import com.tradeexample.imagesync.service.ImageSyncBatchService;
-import com.tradeexample.imagesync.service.ImageSyncBatchService.CreatedTask;
 import com.tradeexample.imagesync.service.ImageSyncService;
 import com.tradeexample.imagesync.vo.ImageSyncResultVO;
+import com.tradeexample.imagesync.vo.ImageSyncTaskCreatedVO;
 import com.tradeexample.imagesync.vo.ImageSyncTaskVO;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -34,7 +34,7 @@ public class ImageSyncTaskController {
     /** 提交三类产品的批量同步任务。 */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<List<CreatedTask>> create() {
+    public ApiResponse<List<ImageSyncTaskCreatedVO>> create() {
         return ApiResponse.success(batchService.create());
     }
 

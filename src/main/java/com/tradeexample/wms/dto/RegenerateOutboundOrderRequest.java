@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
-import com.tradeexample.wms.dto.CreateOutboundOrderRequest.Demand;
 
 import java.util.List;
 
@@ -21,6 +20,6 @@ public record RegenerateOutboundOrderRequest(
         Integer version,
 
         @NotEmpty(message = "出库需求不能为空")
-        List<@NotNull(message = "需求项不能为空") @Valid Demand> demands
+        List<@NotNull(message = "需求项不能为空") @Valid OutboundDemandItem> demands
 ) {
 }
